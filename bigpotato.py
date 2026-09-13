@@ -1,32 +1,35 @@
 import socket
 import threading
-HOST= '192.168.22.204'
+HOST= 'localhost' #192.168.22.204'
 PORT= 5000
 Soncket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 Soncket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 Soncket.bind((HOST,PORT))
 Soncket.listen(67)
-eggies={}
+eggies={}#dictionary of users names(key) and their conection(value)
 print('Server is listening')
-def Alfred(con, addr):
-    keys_string = ", ".join(eggies.keys())
-    for client_con in eggies.values():
-         client_con.send(keys_string.encode("utf-8"))
-    to_who=(con.recv(1024).decode('utf-8'))
+def Alfred(con, addr):#thread that connect clients to 1-1 chat.
     while True:
+         name_output = (con.recv(1024).decode('utf-8'))#input who u want to talk with
+         if name_output not in eggies:
+               con.send("invalid user".encode('utf-8'))
+         else:#if name is on the list, connect that person with wanted user, if not tell them to retype user
+               to_who=eggies[name_output]
+               con.send(("connected to "+ name_output).encode('utf-8'))
+               break
+    while True:#recieves text messages and sent to targeted client.
          data=con.recv(1024)
          if not data:
              print("not data recieved")
              con.close()
              break
          message=data
-         eggies[to_who].send(message)
+         to_who.send(message)
         
 try:
-     while True: 
+     while True: #main thread, recieve each client's name and starts Alfred thread.
          con, addr= Soncket.accept() 
-         data=con.recv(1024)
-         name=data.decode("utf-8")
+         name=con.recv(1024).decode('utf-8')
          eggies[name] = con
          print("Connected", name, eggies[name])
          thread=threading.Thread(target=Alfred, args=(con,addr))
