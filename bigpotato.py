@@ -60,14 +60,18 @@ try:
          name=con.recv(1024).decode('utf-8')
          eggies[name] = con
          method=con.recv(1024).decode('utf-8')
+         print("method recieve",repr(method))
          print("Connected", name, eggies[name])
          if method=="1":
             thread=threading.Thread(target=Alfred, args=(con,addr))
+            print("method recieve", repr(method))
          if method=="2":
              thread=threading.Thread(target=Heisenburg,args=(con,addr))
+             print("method recieve", repr(method)) 
          thread.start()
 finally:
-     Soncket.close()
+    con.close()
+    Soncket.close()
      
      
 
