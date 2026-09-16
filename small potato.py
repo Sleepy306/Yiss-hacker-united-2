@@ -1,8 +1,9 @@
 #/usr/bin/python3 "/Users/student/Yiss hacker united/small potato.py"
+#/usr/bin/python3 "/Users/student/Yiss hacker united/small potato.py"
 import socket
 import threading
 Soncket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-HOST= '192.168.22.204'
+HOST= 'localhost'
 PORT= 5000
 our_drivetrain_broke_again=False
 Soncket.connect((HOST,PORT))
@@ -22,6 +23,12 @@ recieve= threading.Event()
 def Pennyworth():
     message=input("Who would u like to talk to:")
     while True:
+        message=input("Who would u like to talk to:")#who clients want to talk to
+        Soncket.send(message.encode('utf-8'))
+        to_who=(Soncket.recv(1024).decode('utf-8'))
+        if to_who == "invalid user":
+            message=input("Does not exist, type again:")
+        else:# if invalid user, repeat the loop until valid user is type in
         #who clients want to talk to
         Soncket.send(message.encode('utf-8'))
         to_who=(Soncket.recv(1024).decode('utf-8'))
@@ -35,6 +42,8 @@ def Pennyworth():
         print(data)
         if not data:
             break
+    recieve.set()
+    while True: #recieve data from another user
 def Albert_Tesla():
     message=input("Members of the group chat?(seperate by comma)")
     Soncket.send(message.encode('utf-8'))
@@ -51,6 +60,10 @@ def Albert_Tesla():
         print(data)
         if not data:
             break
+    
+thread=threading.Thread(target=Pennyworth)
+thread.start()  
+recieve.wait()
 if method=="DM":
     thread=threading.Thread(target=Pennyworth)
 if method=="GC":
@@ -58,6 +71,8 @@ if method=="GC":
 thread.start()  
 recieve.wait()
 while True:
+    message=input("Message:")#what user want to text to opposing client.
+    Soncket.send(message.encode("utf-8"))#sent to server so that server could bring that to targeted user.
     message=input("Message:")#what user want to text to opposing client.
     Soncket.send(message.encode("utf-8"))#sent to server so that server could bring that to targeted user.
 
