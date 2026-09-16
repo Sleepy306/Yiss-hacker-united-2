@@ -51,6 +51,7 @@ def Albert_Tesla():
         print(data)
         if not data:
             break
+        
 if method=="DM":
     thread=threading.Thread(target=Pennyworth)
 if method=="GC":
@@ -58,7 +59,8 @@ if method=="GC":
 thread.start()  
 recieve.wait()
 while True:
-
+    message=input("Message:")#what user want to text to opposing client.
+    Soncket.send(message.encode("utf-8"))#sent to server so that server could bring that to targeted user.
 
     
     
