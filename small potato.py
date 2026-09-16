@@ -58,9 +58,6 @@ if method=="GC":
 thread.start()  
 recieve.wait()
 while True:
-    message=input("Message:")#what user want to text to opposing client.
-    Soncket.send(message.encode("utf-8"))#sent to server so that server could bring that to targeted user.
-
 
 
     
