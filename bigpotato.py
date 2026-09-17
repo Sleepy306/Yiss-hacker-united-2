@@ -1,6 +1,8 @@
+import sys
 import socket
 import threading
-HOST= '192.168.22.204'
+import pickle
+HOST= "localhost"#'192.168.22.204'
 PORT= 5000
 Soncket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 Soncket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -11,14 +13,23 @@ bigger_eggies={}
 group_number=0
 print('Server is listening')
 def Alfred(con, addr):#thread that connect clients to 1-1 chat.
-    while True:
-         name_output = (con.recv(1024).decode('utf-8'))#input who u want to talk with
-         if name_output not in eggies:
-               con.send("invalid user".encode('utf-8'))
-         else:#if name is on the list, connect that person with wanted user, if not tell them to retype user
-               to_who=eggies[name_output]
-               con.send(("connected to "+ name_output).encode('utf-8'))
-               break
+
+#    while True:
+#         name_output = (con.recv(1024).decode('utf-8'))#input who u want to talk with
+#         if name_output not in eggies:
+#               con.send("invalid user".encode('utf-8'))
+#         else:#if name is on the list, connect that person with wanted user, if not tell them to retype user
+#               to_who=eggies[name_output]
+#               con.send(("connected to "+ name_output).encode('utf-8'))
+#               break
+
+    usernames = list(eggies)
+    print(usernames)
+    con.send(pickle.dumps(usernames))
+    print(f"USER {addr}: Send user list")
+    userSelected = con.recv(1024).decode('utf-8')
+    print(f"USER {addr}: user selected {userSelected}")
+
     while True:#recieves text messages and sent to targeted client.
          data=con.recv(1024)
          if not data:
@@ -57,8 +68,12 @@ def Heisenburg(con,addr):
 try:
      while True: #main thread, recieve each client's name and starts Alfred thread.
          con, addr= Soncket.accept() 
+         print("SERVER: Connection")
+
          name=con.recv(1024).decode('utf-8')
+         print(f"SERVER: Name received: {name}")
          eggies[name] = con
+
          method=con.recv(1024).decode('utf-8')
          print("method recieve",repr(method))
          print("Connected", name, eggies[name])
