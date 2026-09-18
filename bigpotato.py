@@ -23,10 +23,11 @@ def Alfred(con, addr):#thread that connect clients to 1-1 chat.
 #               to_who=eggies[name_output]
 #               con.send(("connected to "+ name_output).encode('utf-8'))
 #               break
+    myName = name
 
     usernames = list(eggies)
-    print(usernames)
     con.send(pickle.dumps(usernames))
+    
     print(f"USER {addr}: Send user list")
 
     while True:
@@ -41,10 +42,12 @@ def Alfred(con, addr):#thread that connect clients to 1-1 chat.
     to_who = eggies[userSelected]
 
     print(f"USER {addr}: Awaiting first message")
+    con.send("Connected Successfully".encode("utf-8"))
     while True:#recieves text messages and sent to targeted client.
          data=con.recv(1024)
          if not data:
-             print("not data recieved")
+             print(f"DISCONNECTED: {addr}")
+             to_who.send(f"{myName} has disconnected".encode('utf-8'))
              con.close()
              break
          message=data

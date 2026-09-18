@@ -15,16 +15,21 @@ PORT= 5000
 
 our_drivetrain_broke_again=False
 
-
-
-def GetNewListData():
-    
+def GetNewListData():  
+    listUpdating.clear()
     while guiHandler.processing:
         Soncket.send("reloadls".encode('utf-8'))
         userList = pickle.loads(Soncket.recv(1024))
         userList.remove(name)
         guiHandler.selectDialog.UpdateList(userList)
+    listUpdating.set()
+
 userListReloadThread = threading.Thread(target=GetNewListData)
+
+listUpdating = threading.Event()
+
+readyToReceive = threading.Event()
+readyToReceive.clear()
 
 def Disconnect():
     Soncket.close()
@@ -37,8 +42,6 @@ class Pennyworth(GUI.QThread):
     def __init__(self):
         super().__init__()
         self.waitForInput = threading.Event()
-        self.readyToReceive = threading.Event()
-        self.readyToReceive.clear()
         
         self.waitForInput.clear()
         self.selectedUser = None
@@ -67,8 +70,12 @@ class Pennyworth(GUI.QThread):
         self.waitForInput.wait()
 
         Soncket.send(self.selectedUser.encode('utf-8'))
-        self.readyToReceive.set()
 
+        readyToReceive.set()
+
+        listUpdating.wait()
+
+        print("Ready to chat")
         while True: #recieve data from another user
             data=(Soncket.recv(1024).decode('utf-8'))
             print(data)
@@ -89,7 +96,7 @@ class Albert_Tesla(GUI.QThread):
         super.__init__()
 
         self.readyToReceive = threading.Event()
-        self.readyToReceive.wait()
+        self.readyToReceive.clear()
 
     def Run(self):
         print("Thread albert tesla started")
@@ -103,12 +110,24 @@ class Albert_Tesla(GUI.QThread):
             else:
                 break
         self.readyToReceive.set()
+        
         while True:
             data=(Soncket.recv(1024).decode('utf-8'))
             print(data)
             if not data:
                 break
 
+def sendDataLoop():
+    print("waiting")
+    readyToReceive.wait()
+
+    print("send loop")
+    while True:
+        message=input("Message:")#what user want to text to opposing client.
+        Soncket.send(message.encode("utf-8"))#sent to server so that server could bring that to targeted user.
+sendThread = threading.Thread(target=sendDataLoop)
+
+#---------------------------------------------------------------------------------------------------------------------------------
 try:
     Soncket.connect((HOST,PORT))
 except:
@@ -124,18 +143,14 @@ method = guiHandler.ChatSelect()
 if method=="DM": #Single Chat
     print("GUI: User Selected DM")
     Soncket.sendall("1".encode('utf-8'))
-    thread=Pennyworth()
+    mainThread=Pennyworth()
 
 elif method=="GC": #Group Chat
     print("GUI: User Selected GC")
     Soncket.sendall("2".encode('utf-8'))
-    thread=Albert_Tesla()
+    mainThread=Albert_Tesla()
 
-thread.listUsers.connect(guiHandler.DMUserSelect)
-thread.Run()
+sendThread.start() #This thread wits before the acctuall function is run
 
-thread.readyToReceive.wait()
-
-while True:
-    message=input("Message:")#what user want to text to opposing client.
-    Soncket.send(message.encode("utf-8"))#sent to server so that server could bring that to targeted user.
+mainThread.listUsers.connect(guiHandler.DMUserSelect)
+mainThread.Run()
