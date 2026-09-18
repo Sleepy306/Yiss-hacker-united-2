@@ -12,6 +12,7 @@ eggies={}#dictionary of users names(key) and their conection(value)
 bigger_eggies={}
 group_number=0
 print('Server is listening')
+
 def Alfred(con, addr):#thread that connect clients to 1-1 chat.
 
 #    while True:
@@ -27,9 +28,19 @@ def Alfred(con, addr):#thread that connect clients to 1-1 chat.
     print(usernames)
     con.send(pickle.dumps(usernames))
     print(f"USER {addr}: Send user list")
-    userSelected = con.recv(1024).decode('utf-8')
-    print(f"USER {addr}: user selected {userSelected}")
 
+    while True:
+        userSelected = con.recv(1024).decode('utf-8')
+        if userSelected == "reloadls":
+            usernames = list(eggies)
+            con.send(pickle.dumps(usernames))
+        else:
+            break
+
+    print(f"USER {addr}: user selected {userSelected}")
+    to_who = eggies[userSelected]
+
+    print(f"USER {addr}: Awaiting first message")
     while True:#recieves text messages and sent to targeted client.
          data=con.recv(1024)
          if not data:
@@ -38,6 +49,8 @@ def Alfred(con, addr):#thread that connect clients to 1-1 chat.
              break
          message=data
          to_who.send(message)
+
+
 def Heisenburg(con,addr):
     global group_number
     sleepies=[]
@@ -75,14 +88,14 @@ try:
          eggies[name] = con
 
          method=con.recv(1024).decode('utf-8')
-         print("method recieve",repr(method))
-         print("Connected", name, eggies[name])
+
          if method=="1":
             thread=threading.Thread(target=Alfred, args=(con,addr))
             print("method recieve", repr(method))
          if method=="2":
              thread=threading.Thread(target=Heisenburg,args=(con,addr))
              print("method recieve", repr(method)) 
+             
          thread.start()
 finally:
     con.close()
