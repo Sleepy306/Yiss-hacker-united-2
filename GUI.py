@@ -1,8 +1,54 @@
 #UI files
 
 import sys, threading
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QVBoxLayout, QPushButton, QMessageBox, QInputDialog, QDialog, QComboBox
-from PyQt5.QtCore import pyqtSignal, QThread
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QVBoxLayout, QPushButton, QMessageBox, QInputDialog, QDialog, QComboBox, QListWidget, QListView
+from PyQt5.QtCore import pyqtSignal, QThread, QStringListModel
+
+class ChatWindow(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Chat")
+        self.resize(400, 400)
+
+        self.submittingEvent = threading.Event()
+        self.submittingEvent.clear()
+
+        self.chatHistory = ["History Begins Here"]
+
+        self.chatHistoryDisplay = QListView(self)
+        self.inputField = QLineEdit(self)
+        self.submitButton = QPushButton("Send", self)
+
+        self.model = QStringListModel()
+        self.model.setStringList(self.chatHistory)
+        self.chatHistoryDisplay.setModel(self.model)
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.chatHistoryDisplay)
+        layout.addWidget(self.inputField)
+        layout.addWidget(self.submitButton)
+
+        self.submitButton.clicked.connect(self.Submit)
+        self.inputField.returnPressed.connect(self.Submit)
+
+    def UpdateChatHistory(self, newLine):
+        print(newLine)
+        addedLines = self.model.stringList()
+        addedLines.append(newLine)
+        self.model.setStringList(addedLines)
+
+    def Submit(self):
+        self.submittingEvent.set()
+
+    def GetMessageInBox(self):
+        message = self.inputField.text()
+        self.inputField.setText("")
+
+        self.submittingEvent.clear()
+
+        if not message:
+            return "..."
+        return message
 
 class UserList(QDialog):
     def __init__(self, parent=None):
@@ -43,8 +89,10 @@ class GUI:
 
     def InitializeGUI(self):
         self.app = QApplication(sys.argv)
-        self.window = QWidget()
-        self.window.setGeometry(100, 100, 800, 400)
+        self.app.setApplicationName("Yiss Hackers United Networking")
+
+        self.window = ChatWindow()
+        self.window.show()
 
         self.selectDialog = UserList()
 
@@ -123,18 +171,11 @@ class GUI:
 
 #Test code
 if __name__ == "__main__":
+
     guiHandler = GUI()
     guiHandler.InitializeGUI()
 
-    #guiHandler.window.setLayout(guiHandler.namelayout)
-    #guiHandler.window.show()
-
-    dialog = UserList()
-    dialog.ReloadList()
-    result = dialog.exec_()
-
-    if result == QDialog.accept:
-        print(dialog.GetSubmittedData())
+    sys.exit(guiHandler.app.exec())
 
     #name = guiHandler.NameInputPopup()
 

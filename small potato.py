@@ -31,9 +31,11 @@ listUpdating = threading.Event()
 readyToReceive = threading.Event()
 readyToReceive.clear()
 
+disconnectEvent = threading.Event()
 def Disconnect():
     Soncket.close()
-    thread.s
+    disconnectEvent.set()
+    sys.exit()
 
 class Pennyworth(GUI.QThread):
     
@@ -76,11 +78,10 @@ class Pennyworth(GUI.QThread):
         listUpdating.wait()
 
         print("Ready to chat")
-        while True: #recieve data from another user
-            data=(Soncket.recv(1024).decode('utf-8'))
-            print(data)
-            if not data:
-                break
+        receiveThread.start()
+
+        guiHandler.app.exec()
+        Disconnect()
 
     def ReceiveSelection(self, selection):
         print(f"GUI: Selection received from user: {selection}")
@@ -122,10 +123,25 @@ def sendDataLoop():
     readyToReceive.wait()
 
     print("send loop")
-    while True:
-        message=input("Message:")#what user want to text to opposing client.
+    while not disconnectEvent.is_set():
+        #message=input("Message:")
+        guiHandler.window.submittingEvent.wait()
+        message = guiHandler.window.GetMessageInBox()#what user want to text to opposing client.
+
+        message = name + ": "+ message
+
         Soncket.send(message.encode("utf-8"))#sent to server so that server could bring that to targeted user.
+        guiHandler.window.UpdateChatHistory(message)
 sendThread = threading.Thread(target=sendDataLoop)
+
+def receiveDataLoop():
+    while not disconnectEvent.is_set(): #recieve data from another user
+        data=(Soncket.recv(1024).decode('utf-8'))
+        print(data)
+        guiHandler.window.UpdateChatHistory(data)
+        if not data:
+            break
+receiveThread = threading.Thread(target=receiveDataLoop)
 
 #---------------------------------------------------------------------------------------------------------------------------------
 try:
